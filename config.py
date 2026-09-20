@@ -55,5 +55,11 @@ BTN_LEVEL_CLEAR_NEXT = (350, 430, 200, 58)
 BTN_GAME_OVER_RESTART = (350, 430, 200, 58)
 BTN_ALL_CLEAR_MENU = (350, 430, 200, 58)
 
+# ---------- 动画 ----------
+ANIM_FLY_TIME = 0.30           # 箭头飞出动画的时长（秒）
+ANIM_SHAKE_TIME = 0.60         # 碰撞抖动 / 红色高亮的持续时长（秒）
+ANIM_SHAKE_AMPLITUDE = 12      # 碰撞抖动的最大偏移（像素）
+ANIM_HINT_TIME = 1.6           # 顶部碰撞提示文字的停留时长（秒）
+
 # ---------- 规则 ----------
 DEFAULT_MAX_MISTAKES = 3       # 每关默认的失误次数上限

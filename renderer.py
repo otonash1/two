@@ -157,14 +157,50 @@ def draw_board(surface, game):
 
     for (row, col), direction in board.arrows.items():
         center = cell_center(board, row, col)
-        blocked = game.blocked_cell == (row, col)
+        progress = game.blocked_elapsed / config.ANIM_SHAKE_TIME
+        blocked = game.blocked_cell == (row, col) and progress < 1.0
         if blocked:
-            # 刚被挡住的箭头用红色圆环 + 红色箭头标出来（碰撞反馈）
-            pygame.draw.circle(surface, config.COLOR_ARROW_BLOCKED, center,
+            # 刚被挡住的箭头：朝自己的方向"撞"一下再弹回来，并套一圈红色圆环
+            delta_row, delta_col = direction.delta
+            shake = math.sin(progress * math.pi * 3) * config.ANIM_SHAKE_AMPLITUDE * (1 - progress)
+            center = (center[0] + delta_col * shake, center[1] + delta_row * shake)
+            pygame.draw.circle(surface, config.COLOR_ARROW_BLOCKED,
+                               (int(center[0]), int(center[1])),
                                int(size * 0.46), config.HIGHLIGHT_RING_WIDTH)
         draw_arrow(surface, center, direction,
                    config.COLOR_ARROW_BLOCKED if blocked else config.COLOR_ARROW,
                    size=size * config.ARROW_RATIO)
+
+    draw_flying_arrows(surface, game)
+
+
+def draw_flying_arrows(surface, game):
+    """正在飞出的箭头：沿自己的方向冲向棋盘外，同时逐渐变淡。"""
+    board = game.board
+    _, _, size = board_layout(board)
+    for item in game.flying:
+        progress = min(item["elapsed"] / config.ANIM_FLY_TIME, 1.0)
+        center = cell_center(board, item["row"], item["col"])
+        delta_row, delta_col = item["direction"].delta
+        # 算一下这个箭头还要走几格才算飞出棋盘，动画正好在"刚出界"时结束
+        if delta_row > 0:
+            steps = board.rows - item["row"]
+        elif delta_row < 0:
+            steps = item["row"] + 1
+        elif delta_col > 0:
+            steps = board.cols - item["col"]
+        else:
+            steps = item["col"] + 1
+        travel = (steps + 0.5) * size * progress
+        center = (center[0] + delta_col * travel, center[1] + delta_row * travel)
+        # 画在带透明通道的小画布上，实现"越飞越淡"
+        patch = pygame.Surface((size, size), pygame.SRCALPHA)
+        pygame.draw.polygon(
+            patch,
+            config.COLOR_ARROW + (int(255 * (1.0 - progress)),),
+            arrow_points((size / 2, size / 2), size * config.ARROW_RATIO, item["direction"]),
+        )
+        surface.blit(patch, (int(center[0] - size / 2), int(center[1] - size / 2)))
 
 
 # ---------------------------------------------------------------
@@ -195,7 +231,7 @@ def draw_playing(surface, game):
     draw_text(surface, f"剩余失误：{board.mistakes_left} / {board.max_mistakes}",
               config.FONT_NORMAL, topright=(width - 40, 74),
               color=config.COLOR_ARROW_BLOCKED if board.mistakes_left <= 1 else config.COLOR_TEXT)
-    if game.blocked_cell is not None:
+    if game.blocked_cell is not None and game.blocked_elapsed < config.ANIM_HINT_TIME:
         draw_text(surface, "前方有箭头阻挡，不能飞出（失误 +1）", config.FONT_SMALL,
                   center=(width // 2, 122), color=config.COLOR_ARROW_BLOCKED)
 

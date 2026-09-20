@@ -33,6 +33,8 @@ class Game:
         self.board = None
         self.level_index = 0
         self.blocked_cell = None        # 最近一次被挡住的格子 (row, col)，用于碰撞高亮
+        self.blocked_elapsed = 0.0      # 碰撞发生之后过了多久（秒），驱动抖动和提示淡出
+        self.flying = []                # 正在播飞出动画的箭头：{row, col, direction, elapsed}
 
         self.message = ""               # 结算界面的主标题
         self.hint = ""                  # 结算界面的说明文字
@@ -51,7 +53,7 @@ class Game:
             max_mistakes=level.get("max_mistakes", config.DEFAULT_MAX_MISTAKES),
             name=level.get("name", f"第 {index + 1} 关"),
         )
-        self.blocked_cell = None
+        self._clear_feedback()
         self.scene = Scene.PLAYING
 
     def restart_level(self):
@@ -59,7 +61,7 @@ class Game:
         if self.board is None:
             return
         self.board.restart()
-        self.blocked_cell = None
+        self._clear_feedback()
         self.scene = Scene.PLAYING
 
     def next_level(self):
@@ -87,7 +89,13 @@ class Game:
     def back_to_menu(self):
         self.scene = Scene.MENU
         self.board = None
+        self._clear_feedback()
+
+    def _clear_feedback(self):
+        """清掉碰撞提示和还没播完的飞出动画。"""
         self.blocked_cell = None
+        self.blocked_elapsed = 0.0
+        self.flying.clear()
 
     def _show_result(self, scene, message, hint, button_label):
         """切到结算界面，并记住这个界面的按钮。"""
@@ -145,15 +153,20 @@ class Game:
 
     def handle_cell_click(self, cell):
         """点击棋盘的某个格子：先交给 Board 判定，再按结果推进游戏流程。"""
+        direction = self.board.arrow_at(*cell)
         result = self.board.click(*cell)
         if result is ClickResult.IGNORED:
             return
         if result is ClickResult.FLY_OUT:
             self.blocked_cell = None
+            # 已经消除的箭头不能再从棋盘上取，这里记下它飞出的方向播动画
+            self.flying.append({"row": cell[0], "col": cell[1],
+                                "direction": direction, "elapsed": 0.0})
             if self.board.cleared:
                 self.finish_level()          # 箭头全部清空 -> 过关（T04）
         else:
             self.blocked_cell = cell         # 被挡住：高亮这个箭头，提示碰撞
+            self.blocked_elapsed = 0.0
             if self.board.failed:
                 self.show_game_over()        # 失误次数耗尽 -> 失败（T05）
 
@@ -179,6 +192,14 @@ class Game:
     # ---------------------------------------------------------------
     # 主循环
     # ---------------------------------------------------------------
+    def update(self, dt):
+        """推进动画：飞出动画到时后移除，碰撞计时用于抖动和提示的淡出。"""
+        for item in self.flying:
+            item["elapsed"] += dt
+        self.flying = [item for item in self.flying if item["elapsed"] < config.ANIM_FLY_TIME]
+        if self.blocked_cell is not None:
+            self.blocked_elapsed += dt
+
     def draw(self):
         """先铺底色，再按当前场景绘制。"""
         self.screen.fill(config.COLOR_BG)
@@ -193,8 +214,9 @@ class Game:
 
     def run(self):
         while self.running:
-            self.clock.tick(config.FPS)
+            dt = self.clock.tick(config.FPS) / 1000.0   # 距上一帧的秒数，用于推进动画
             for event in pygame.event.get():
                 self.handle_event(event)
+            self.update(dt)
             self.draw()
             pygame.display.flip()
