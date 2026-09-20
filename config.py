@@ -10,8 +10,10 @@ WINDOW_TITLE = "一箭又一箭"
 FPS = 60
 
 # ---------- 棋盘 ----------
-CELL_SIZE = 96                 # 每个格子的边长（像素）
-BOARD_ORIGIN = (210, 150)      # 棋盘左上角在窗口中的坐标 (x, y)
+CELL_SIZE = 96                 # 格子边长的上限（像素），棋盘较大时会自动缩小
+BOARD_TOP = 150                # 棋盘区域的上边界
+BOARD_BOTTOM = 620             # 棋盘区域的下边界（给底部按钮留出空间）
+BOARD_MARGIN_X = 40            # 棋盘左右两侧至少保留的空白
 BOARD_PADDING = 10             # 棋盘白底相对格子的外扩留白
 GRID_LINE_WIDTH = 2
 ARROW_RATIO = 0.62             # 箭头大小相对格子的比例

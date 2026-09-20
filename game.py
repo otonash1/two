@@ -169,8 +169,7 @@ class Game:
         """把窗口坐标换算成格子坐标，点在棋盘外返回 None。"""
         if self.board is None:
             return None
-        origin_x, origin_y = config.BOARD_ORIGIN
-        size = config.CELL_SIZE
+        origin_x, origin_y, size = renderer.board_layout(self.board)
         x, y = pos
         if not (origin_x <= x < origin_x + self.board.cols * size
                 and origin_y <= y < origin_y + self.board.rows * size):

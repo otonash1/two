@@ -65,20 +65,38 @@ def draw_button(surface, rect_tuple, label, hovered=False):
 # ---------------------------------------------------------------
 # 棋盘几何
 # ---------------------------------------------------------------
+def board_layout(board):
+    """算出棋盘的位置和格子大小，返回 (origin_x, origin_y, cell_size)。
+
+    棋盘水平居中、竖直放在棋盘区域里；关卡比可用空间大时自动缩小格子，
+    这样不同尺寸的关卡（5x5、6x6……）都能完整显示。
+    绘制和"点击坐标 -> 格子"的换算共用这一份几何信息，保证两边一致。
+    """
+    size = min(
+        config.CELL_SIZE,
+        (config.WINDOW_WIDTH - config.BOARD_MARGIN_X * 2) // board.cols,
+        (config.BOARD_BOTTOM - config.BOARD_TOP) // board.rows,
+    )
+    origin_x = (config.WINDOW_WIDTH - board.cols * size) // 2
+    area_height = config.BOARD_BOTTOM - config.BOARD_TOP
+    origin_y = config.BOARD_TOP + (area_height - board.rows * size) // 2
+    return origin_x, origin_y, size
+
+
 def board_rect(board):
     """棋盘白底在窗口中的矩形。"""
+    origin_x, origin_y, size = board_layout(board)
     return pygame.Rect(
-        config.BOARD_ORIGIN[0] - config.BOARD_PADDING,
-        config.BOARD_ORIGIN[1] - config.BOARD_PADDING,
-        board.cols * config.CELL_SIZE + config.BOARD_PADDING * 2,
-        board.rows * config.CELL_SIZE + config.BOARD_PADDING * 2,
+        origin_x - config.BOARD_PADDING,
+        origin_y - config.BOARD_PADDING,
+        board.cols * size + config.BOARD_PADDING * 2,
+        board.rows * size + config.BOARD_PADDING * 2,
     )
 
 
-def cell_center(row, col):
+def cell_center(board, row, col):
     """格子中心在窗口中的坐标。"""
-    origin_x, origin_y = config.BOARD_ORIGIN
-    size = config.CELL_SIZE
+    origin_x, origin_y, size = board_layout(board)
     return (origin_x + col * size + size // 2, origin_y + row * size + size // 2)
 
 
@@ -118,20 +136,18 @@ def arrow_points(center, size, direction):
     return points
 
 
-def draw_arrow(surface, center, direction, color, size=None):
-    """在 center 处画一个指定方向的箭头。"""
-    size = size or config.CELL_SIZE * config.ARROW_RATIO
+def draw_arrow(surface, center, direction, color, size):
+    """在 center 处画一个指定方向、指定大小的箭头。"""
     pygame.draw.polygon(surface, color, arrow_points(center, size, direction))
 
 
 def draw_board(surface, game):
     """画棋盘白底、网格线和所有未消除的箭头。"""
     board = game.board
+    origin_x, origin_y, size = board_layout(board)
     rect = board_rect(board)
     pygame.draw.rect(surface, config.COLOR_BOARD_BG, rect, border_radius=12)
 
-    origin_x, origin_y = config.BOARD_ORIGIN
-    size = config.CELL_SIZE
     for row in range(board.rows):
         for col in range(board.cols):
             cell = pygame.Rect(origin_x + col * size, origin_y + row * size, size, size)
@@ -140,14 +156,15 @@ def draw_board(surface, game):
     pygame.draw.rect(surface, config.COLOR_BOARD_BORDER, rect, width=3, border_radius=12)
 
     for (row, col), direction in board.arrows.items():
-        center = cell_center(row, col)
+        center = cell_center(board, row, col)
         blocked = game.blocked_cell == (row, col)
         if blocked:
             # 刚被挡住的箭头用红色圆环 + 红色箭头标出来（碰撞反馈）
             pygame.draw.circle(surface, config.COLOR_ARROW_BLOCKED, center,
                                int(size * 0.46), config.HIGHLIGHT_RING_WIDTH)
         draw_arrow(surface, center, direction,
-                   config.COLOR_ARROW_BLOCKED if blocked else config.COLOR_ARROW)
+                   config.COLOR_ARROW_BLOCKED if blocked else config.COLOR_ARROW,
+                   size=size * config.ARROW_RATIO)
 
 
 # ---------------------------------------------------------------
