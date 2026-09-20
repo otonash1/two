@@ -76,6 +76,35 @@ python tests.py
 | T05 | 失误次数耗尽后判定失败 | 通过 |
 | T06 | 重新开始后箭头布局与失误次数还原 | 通过 |
 
+实际运行输出：
+
+```text
+PS D:\1123\arrow-game> python tests.py
+pygame 2.6.1 (SDL 2.28.4, Python 3.12.10)
+Hello from the pygame community. https://www.pygame.org/contribute.html
+test_t01_前方畅通的箭头可以飞出 (__main__.BoardRulesTest.test_t01_前方畅通的箭头可以飞出)
+T01 前方没有箭头阻挡时，点击后箭头飞出并从棋盘上消失。 ... ok
+test_t02_前方被挡住的箭头不能飞出 (__main__.BoardRulesTest.test_t02_前方被挡住的箭头不能飞出)
+T02 前方有箭头阻挡时不能飞出，箭头留在原地且失误 +1。 ... ok
+test_t03_边界处朝棋盘外的箭头可以飞出 (__main__.BoardRulesTest.test_t03_边界处朝棋盘外的箭头可以飞出)
+T03 贴着边界、方向朝棋盘外的箭头可以直接飞出。 ... ok
+test_t04_清空全部箭头后判定过关 (__main__.GameFlowTest.test_t04_清空全部箭头后判定过关)
+T04 存在能清空所有箭头的点击顺序，清空后进入过关界面。 ... ok
+test_t05_失误次数耗尽后判定失败 (__main__.GameFlowTest.test_t05_失误次数耗尽后判定失败)
+T05 失误次数用完，进入失败界面。 ... ok
+test_t06_重新开始后关卡还原 (__main__.GameFlowTest.test_t06_重新开始后关卡还原)
+T06 重新开始后，飞出的箭头回来、失误次数清零。 ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.360s
+
+OK
+```
+
+对应的运行截图：
+
+![测试运行结果](screenshots/test_run.png)
+
 ## 截图
 
 开始界面：
