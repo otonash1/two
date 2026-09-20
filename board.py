@@ -102,12 +102,36 @@ class Board:
         return self.arrows.get((row, col))
 
     # ---------------------------------------------------------------
-    # 规则判定（第二步：路径检测时实现）
+    # 规则判定
     # ---------------------------------------------------------------
     def can_fly_out(self, row, col):
-        """判断 (row, col) 上的箭头前方是否没有其他箭头阻挡。"""
-        raise NotImplementedError("路径检测将在第二步实现")
+        """判断 (row, col) 上的箭头前方是否没有其他箭头阻挡（T01 / T02 / T03）。
+
+        做法：从箭头所在格子出发，沿着它的方向一格一格往边界走。
+        途中只要碰到另一个箭头，就说明被挡住了；
+        一路走到棋盘外面，说明前方畅通，可以飞出。
+        """
+        direction = self.arrows.get((row, col))
+        if direction is None:
+            return False
+        delta_row, delta_col = direction.delta
+        r, c = row + delta_row, col + delta_col
+        while 0 <= r < self.rows and 0 <= c < self.cols:
+            if (r, c) in self.arrows:
+                return False
+            r += delta_row
+            c += delta_col
+        return True
 
     def click(self, row, col):
-        """处理一次点击，返回 ClickResult。"""
-        raise NotImplementedError("点击判定将在第二步实现")
+        """处理一次点击，返回 ClickResult。
+
+        点到空格子不做任何事；前方畅通就消除箭头；被挡住则记一次失误。
+        """
+        if (row, col) not in self.arrows:
+            return ClickResult.IGNORED
+        if self.can_fly_out(row, col):
+            del self.arrows[(row, col)]
+            return ClickResult.FLY_OUT
+        self.mistakes += 1
+        return ClickResult.BLOCKED

@@ -6,7 +6,7 @@ import pygame
 
 import config
 import renderer
-from board import Board
+from board import Board, ClickResult
 from levels import LEVELS
 
 
@@ -32,7 +32,7 @@ class Game:
         self.scene = Scene.MENU
         self.board = None
         self.level_index = 0
-        self.selected = None            # 当前选中的格子 (row, col)，用于高亮显示
+        self.blocked_cell = None        # 最近一次被挡住的格子 (row, col)，用于碰撞高亮
 
         self.message = ""               # 结算界面的主标题
         self.hint = ""                  # 结算界面的说明文字
@@ -51,7 +51,7 @@ class Game:
             max_mistakes=level.get("max_mistakes", config.DEFAULT_MAX_MISTAKES),
             name=level.get("name", f"第 {index + 1} 关"),
         )
-        self.selected = None
+        self.blocked_cell = None
         self.scene = Scene.PLAYING
 
     def restart_level(self):
@@ -59,7 +59,7 @@ class Game:
         if self.board is None:
             return
         self.board.restart()
-        self.selected = None
+        self.blocked_cell = None
         self.scene = Scene.PLAYING
 
     def next_level(self):
@@ -87,7 +87,7 @@ class Game:
     def back_to_menu(self):
         self.scene = Scene.MENU
         self.board = None
-        self.selected = None
+        self.blocked_cell = None
 
     def _show_result(self, scene, message, hint, button_label):
         """切到结算界面，并记住这个界面的按钮。"""
@@ -129,9 +129,7 @@ class Game:
                 return
             cell = self.cell_at(pos)
             if cell is not None:
-                # 第二步会在这里改成调用 board.click()，接上完整的判定
-                if self.board.arrow_at(*cell) is not None:
-                    self.selected = cell
+                self.handle_cell_click(cell)
 
         else:  # 三个结算界面
             if self._hit(self.result_button_rect, pos):
@@ -144,6 +142,20 @@ class Game:
             self.restart_level()
         else:
             self.back_to_menu()
+
+    def handle_cell_click(self, cell):
+        """点击棋盘的某个格子：先交给 Board 判定，再按结果推进游戏流程。"""
+        result = self.board.click(*cell)
+        if result is ClickResult.IGNORED:
+            return
+        if result is ClickResult.FLY_OUT:
+            self.blocked_cell = None
+            if self.board.cleared:
+                self.finish_level()          # 箭头全部清空 -> 过关（T04）
+        else:
+            self.blocked_cell = cell         # 被挡住：高亮这个箭头，提示碰撞
+            if self.board.failed:
+                self.show_game_over()        # 失误次数耗尽 -> 失败（T05）
 
     @staticmethod
     def _hit(rect_tuple, pos):

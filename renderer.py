@@ -141,12 +141,13 @@ def draw_board(surface, game):
 
     for (row, col), direction in board.arrows.items():
         center = cell_center(row, col)
-        selected = game.selected == (row, col)
-        if selected:
-            pygame.draw.circle(surface, config.COLOR_ARROW_SELECTED, center,
-                               int(size * 0.46), config.SELECT_RING_WIDTH)
+        blocked = game.blocked_cell == (row, col)
+        if blocked:
+            # 刚被挡住的箭头用红色圆环 + 红色箭头标出来（碰撞反馈）
+            pygame.draw.circle(surface, config.COLOR_ARROW_BLOCKED, center,
+                               int(size * 0.46), config.HIGHLIGHT_RING_WIDTH)
         draw_arrow(surface, center, direction,
-                   config.COLOR_ARROW_SELECTED if selected else config.COLOR_ARROW)
+                   config.COLOR_ARROW_BLOCKED if blocked else config.COLOR_ARROW)
 
 
 # ---------------------------------------------------------------
@@ -177,6 +178,9 @@ def draw_playing(surface, game):
     draw_text(surface, f"剩余失误：{board.mistakes_left} / {board.max_mistakes}",
               config.FONT_NORMAL, topright=(width - 40, 74),
               color=config.COLOR_ARROW_BLOCKED if board.mistakes_left <= 1 else config.COLOR_TEXT)
+    if game.blocked_cell is not None:
+        draw_text(surface, "前方有箭头阻挡，不能飞出（失误 +1）", config.FONT_SMALL,
+                  center=(width // 2, 122), color=config.COLOR_ARROW_BLOCKED)
 
     draw_board(surface, game)
 

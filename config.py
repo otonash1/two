@@ -15,7 +15,7 @@ BOARD_ORIGIN = (210, 150)      # 棋盘左上角在窗口中的坐标 (x, y)
 BOARD_PADDING = 10             # 棋盘白底相对格子的外扩留白
 GRID_LINE_WIDTH = 2
 ARROW_RATIO = 0.62             # 箭头大小相对格子的比例
-SELECT_RING_WIDTH = 4
+HIGHLIGHT_RING_WIDTH = 4       # 碰撞高亮圆环的线宽
 
 # ---------- 颜色 ----------
 COLOR_BG = (241, 245, 249)
@@ -24,7 +24,6 @@ COLOR_BOARD_BG = (255, 255, 255)
 COLOR_BOARD_BORDER = (148, 163, 184)
 COLOR_GRID_LINE = (203, 213, 225)
 COLOR_ARROW = (37, 99, 235)
-COLOR_ARROW_SELECTED = (245, 158, 11)
 COLOR_ARROW_BLOCKED = (220, 38, 38)
 COLOR_TEXT = (30, 41, 59)
 COLOR_TEXT_MUTED = (100, 116, 139)
