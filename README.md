@@ -16,9 +16,21 @@
 
 ## 安装与运行
 
+### 方式一：免安装可执行文件（Windows）
+
+从 [Releases](https://github.com/otonash1/arrow-game/releases/latest) 下载 `ArrowGame.exe`，双击即可运行，不需要安装 Python 和 pygame。
+
+### 方式二：从源码运行
+
 ```bash
 pip install -r requirements.txt
 python main.py
+```
+
+如果想自己打包成单文件 exe：
+
+```bash
+pyinstaller --onefile --windowed --name ArrowGame main.py
 ```
 
 ## 操作说明
